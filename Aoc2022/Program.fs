@@ -166,6 +166,38 @@ module Hoved =
         |> List.sum
 
 
+    let parseSectionPair = fun (secs: string) ->  
+        
+        let vals= 
+            secs.Split ',' 
+            |> Array.map (fun ssl -> 
+                ssl.Split '-'
+                |> Array.map (fun sr -> sr |> int) 
+            )
+        ((vals[0][0], vals[0][1]), (vals[1][0], vals[1][1]))
+
+    let isWithin = fun (from1:int, to1:int) (from2:int, to2:int) ->
+        from1 >= from2 
+        && from1 <= to2 
+        && to1 >= from2 
+        && to1 <= to2
+
+    let isOverlap = fun (from1:int, to1:int) (from2:int, to2:int) ->
+           from1 >= from2 && from1 <= to2 
+        || to1 >= from2 && to1 <= to2
+
+    let fjerdedesember = fun puzzle overlap->
+
+        puzzle 
+        |> List.map parseSectionPair
+        |> List.map (fun (p1, p2) -> 
+            if overlap p1 p2 || overlap p2 p1 then
+                1
+            else
+                0
+            )
+        |> List.sum
+
     [<EntryPoint>]
     let main argv = 
                            
@@ -177,9 +209,14 @@ module Hoved =
         // printf "2.desember 1 Rock Paper Scissors %i\n" (andredesember puzzle game1)
         // printf "2.desember 2 Rock Paper Scissors %i\n" (andredesember puzzle game2)
 
-        let puzzle= File.ReadAllLines(@"dec3.txt") |> List.ofSeq
-        printf "3.desember 1 Rucksack %i\n" (tredjedesember puzzle)
-        printf "3.desember 2 Rucksack %i\n" (tredjedesember2 puzzle)
+        // let puzzle= File.ReadAllLines(@"dec3.txt") |> List.ofSeq
+        // printf "3.desember 1 Rucksack %i\n" (tredjedesember puzzle)
+        // printf "3.desember 2 Rucksack %i\n" (tredjedesember2 puzzle)
+
+        let puzzle= File.ReadAllLines(@"dec4.txt") |> List.ofSeq
+        printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isWithin)
+        printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isOverlap)
+        
 
         Console.Read() |> ignore
         0 // return an integer exit code
