@@ -198,6 +198,47 @@ module Hoved =
             )
         |> List.sum
 
+
+    let initialStackInput = 
+        ["        [F] [Q]         [Q]        " ]
+        ["[B]     [Q] [V] [D]     [S]        " ]
+        ["[S] [P] [T] [R] [M]     [D]        " ]
+        ["[J] [V] [W] [M] [F]     [J]     [J]" ]
+        ["[Z] [G] [S] [W] [N] [D] [R]     [T]" ]
+        ["[V] [M] [B] [G] [S] [C] [T] [V] [S]" ]
+        ["[D] [S] [L] [J] [L] [G] [G] [F] [R]" ]
+        ["[G] [Z] [C] [H] [C] [R] [H] [P] [D]" ] 
+       // 1   2   3   4   5   6   7   8   9 
+
+    let parseStack = fun (initialStack: string list) ->
+ 
+        let stacks= [
+            for i = 0 to initialStack.Length do
+                let row= [ 
+                    for j = 0 to initialStack.Head.Length do
+                        let from = j * 4 + 1
+                        initialStack.[i].[from]                        
+                        ]
+                row
+                ]
+        stacks
+
+    let parseInstruction= fun (instructionString: string) ->
+        //Eg. move 14 from 3 to 9
+        let numbersOnly= 
+            instructionString
+                .Replace("move", "")
+                .Replace(" from", "")
+                .Replace(" to", "") 
+                .Split ' ' 
+        numbersOnly |> Array.map (fun elt -> elt |> int)
+
+    let femtedesember = fun puzzle ->
+        let instructions = puzzle |> parseInstruction
+        let stack = 
+            parseStack initialStackInput
+            |>
+
     [<EntryPoint>]
     let main argv = 
                            
@@ -213,9 +254,14 @@ module Hoved =
         // printf "3.desember 1 Rucksack %i\n" (tredjedesember puzzle)
         // printf "3.desember 2 Rucksack %i\n" (tredjedesember2 puzzle)
 
-        let puzzle= File.ReadAllLines(@"dec4.txt") |> List.ofSeq
-        printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isWithin)
-        printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isOverlap)
+        // let puzzle= File.ReadAllLines(@"dec4.txt") |> List.ofSeq
+        // printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isWithin)
+        // printf "4.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
+
+        let puzzle= File.ReadAllLines(@"dec5.txt") |> List.ofSeq
+        printf "5.desember 1 section overlap %i\n" (femtedesember puzzle)
+        //printf "5.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
+
         
 
         Console.Read() |> ignore
