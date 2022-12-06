@@ -211,17 +211,28 @@ module Hoved =
        // 1   2   3   4   5   6   7   8   9 
 
     let parseStack = fun (initialStack: string list) ->
- 
+
         let stacks= [
-            for i = 0 to initialStack.Length do
-                let row= [ 
-                    for j = 0 to initialStack.Head.Length do
-                        let from = j * 4 + 1
+            for i = 0 to 8 do
+                let from = i * 4 + 1
+                let let row= [ 
+                    for j = 0 to initialStack.Length do
                         initialStack.[i].[from]                        
                         ]
-                row
+                    row
                 ]
         stacks
+
+        // let stacks= [
+        //     for i = 0 to initialStack.Length do
+        //         let row= [ 
+        //             for j = 0 to initialStack.Head.Length do
+        //                 let from = j * 4 + 1
+        //                 initialStack.[i].[from]                        
+        //                 ]
+        //         row
+        //         ]
+        // stacks
 
     let parseInstruction= fun (instructionString: string) ->
         //Eg. move 14 from 3 to 9
