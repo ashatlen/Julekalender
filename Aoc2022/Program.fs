@@ -261,28 +261,78 @@ module Hoved =
 
         let allInst = 
             instructions 
-//            |> List.take 2
             |> List.collect (fun instr ->
-//                printf "Moving %i items from %i to %i \n" instr.[0] instr.[1] instr.[2] |> ignore
                 [for _ = 1 to instr[0] do [instr.[1]; instr.[2]]]
                 )
         allInst
         |> List.fold updateStack stacks
-        
+
     let femtedesember = fun (puzzle: string list) ->
         let instructions = 
             puzzle 
             |> List.map (fun inst -> 
                 parseInstruction inst
                 )
-        let stack = 
-            parseStack initialStackInput
-            |> (operateCrane instructions)
-
-        printf "End stack %A\n" stack
-        stack 
+        parseStack initialStackInput
+        |> (operateCrane instructions)
         |> List.map (fun s -> s.Head) 
         |> List.toArray |> (fun s -> new System.String(s))
+
+    let rec skip = fun (n:int) (xs: char list) ->
+        if n > 0 then
+            skip (n-1) xs.Tail
+        else
+            xs
+
+    let updateStack9001 = fun  (stacks: char list list) (instr : int list) ->
+        let f= instr.[1]-1
+        let t= instr.[2]-1
+        printf "Move %i crates from %i to %i\n" instr.[0] f t
+        [
+        for i = 0 to stacks.Length-1 do
+            if i = t then 
+                let elts = stacks.[f] |> List.take instr.[0]
+                // printf "Move %A \n" elts
+                List.append elts stacks.[t]
+            elif i = f then 
+                let s= stacks.[f] |> skip instr.[0]  
+                // printf "Cutting stack from %A to %A\n" s stacks.[f]
+                s
+            else stacks.[i] 
+        ]
+
+    let operateCrane9001= fun (instructions: int list list) (stacks: char list list) ->
+        instructions 
+        // |> List.take 1
+        |> List.fold updateStack9001 stacks
+
+
+    let femtedesember2 = fun (puzzle: string list) ->
+        let instructions = 
+            puzzle 
+            |> List.map (fun inst -> 
+                parseInstruction inst
+                )
+        parseStack initialStackInput
+        |> (operateCrane9001 instructions)
+        |> List.map (fun s -> s.Head) 
+        |> List.toArray |> (fun s -> new System.String(s))
+
+
+    let rec checkForStartcode = fun (pos:int) (l:int) (s:string) ->
+        if pos + 4 >= s.Length then
+            -1 
+        else
+            let subs= 
+                s.Substring(pos)[0..(l-1)]
+                |> Set 
+            if subs |> Set.count = l then
+                pos+l
+            else
+                checkForStartcode (pos+1) l s
+
+    let sjettedesember = fun (puzzle: string) (l:int) ->
+        checkForStartcode 0 l puzzle
 
     [<EntryPoint>]
     let main argv = 
@@ -303,13 +353,19 @@ module Hoved =
         // printf "4.desember 1 section overlap %i\n" (fjerdedesember puzzle isWithin)
         // printf "4.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
 
-        let puzzle= File.ReadAllLines(@"dec5.txt") |> List.ofSeq
-        printf "5.desember 1 section crane operations\n"
-        let s= (femtedesember puzzle)
-        printf "End result %s\n" s
-        //printf "5.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
+        // let puzzle= File.ReadAllLines(@"dec5.txt") |> List.ofSeq
+        // printf "5.desember 1 section crane operations %s\n" (femtedesember puzzle) // WCZTHTMPS              
+        // printf "5.desember 2 section crane operations %s\n" (femtedesember2 puzzle)
 
-                
+
+        printf "6.desember 1 test %i\n" (sjettedesember "bvwbjplbgvbhsrlpgdmjqwftvncz" 4) //: first marker after character 5
+        printf "6.desember 1 test %i\n" (sjettedesember "nppdvjthqldpwncqszvftbrmjlhg" 4) //: first marker after character 6
+        printf "6.desember 2 test %i\n" (sjettedesember "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" 14) //: first marker after character 10
+        printf "6.desember 2 test %i\n" (sjettedesember "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" 14) //: first marker after character 11
+
+        let puzzle= File.ReadAllLines(@"dec6.txt") |> Seq.head
+        printf "6.desember 1 section %i\n" (sjettedesember puzzle 4) // WCZTHTMPS              
+        printf "6.desember 2 section %i\n" (sjettedesember puzzle 14) // WCZTHTMPS              
 
         Console.Read() |> ignore
         0 // return an integer exit code
