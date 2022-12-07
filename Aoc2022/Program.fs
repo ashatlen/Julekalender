@@ -107,7 +107,8 @@ module Hoved =
         if cs = List.empty then
             None
         else
-            let c::r = cs
+            let c = cs.Head
+            let r = cs.Tail
             if s.Contains(c) then
                 Some c
             else
@@ -118,17 +119,18 @@ module Hoved =
         if cs = List.empty then
             None
         else
-            let c::r = cs
+            let c = cs.Head
+            let r = cs.Tail
             if s1.Contains(c) && s2.Contains(c) then
                 Some c
             else
                 IsInStrings s1 s2 r
 
-
     let mapToPriority= fun x ->
         match x with
         | (Some c) when c > 'Z' -> (c |> int) - ('a' |> int) + 1
         | (Some c) -> (c |> int) - ('A' |> int)  + 27
+        | _ -> -1
 
     let tredjedesember = fun (puzzle: string list) ->
 
@@ -200,14 +202,15 @@ module Hoved =
 
 
     let initialStackInput = 
-        ["        [F] [Q]         [Q]        " ]
-        ["[B]     [Q] [V] [D]     [S]        " ]
-        ["[S] [P] [T] [R] [M]     [D]        " ]
-        ["[J] [V] [W] [M] [F]     [J]     [J]" ]
-        ["[Z] [G] [S] [W] [N] [D] [R]     [T]" ]
-        ["[V] [M] [B] [G] [S] [C] [T] [V] [S]" ]
-        ["[D] [S] [L] [J] [L] [G] [G] [F] [R]" ]
-        ["[G] [Z] [C] [H] [C] [R] [H] [P] [D]" ] 
+        [
+        "        [F] [Q]         [Q]        " ;
+        "[B]     [Q] [V] [D]     [S]        " ;
+        "[S] [P] [T] [R] [M]     [D]        " ;
+        "[J] [V] [W] [M] [F]     [J]     [J]" ;
+        "[Z] [G] [S] [W] [N] [D] [R]     [T]" ;
+        "[V] [M] [B] [G] [S] [C] [T] [V] [S]" ;
+        "[D] [S] [L] [J] [L] [G] [G] [F] [R]" ;
+        "[G] [Z] [C] [H] [C] [R] [H] [P] [D]" ] 
        // 1   2   3   4   5   6   7   8   9 
 
     let parseStack = fun (initialStack: string list) ->
@@ -215,40 +218,71 @@ module Hoved =
         let stacks= [
             for i = 0 to 8 do
                 let from = i * 4 + 1
-                let let row= [ 
-                    for j = 0 to initialStack.Length do
-                        initialStack.[i].[from]                        
+                let row= [ 
+                    for j = 0 to initialStack.Length-1 do
+                        initialStack.[j].[from]
                         ]
-                    row
+                row |> List.filter (fun celt -> celt <> ' ')
                 ]
         stacks
-
-        // let stacks= [
-        //     for i = 0 to initialStack.Length do
-        //         let row= [ 
-        //             for j = 0 to initialStack.Head.Length do
-        //                 let from = j * 4 + 1
-        //                 initialStack.[i].[from]                        
-        //                 ]
-        //         row
-        //         ]
-        // stacks
 
     let parseInstruction= fun (instructionString: string) ->
         //Eg. move 14 from 3 to 9
         let numbersOnly= 
             instructionString
-                .Replace("move", "")
-                .Replace(" from", "")
-                .Replace(" to", "") 
-                .Split ' ' 
-        numbersOnly |> Array.map (fun elt -> elt |> int)
+                .Replace("move ", "")
+                .Replace(" from ", ";")
+                .Replace(" to ", ";") 
+                .Split ';'
 
-    let femtedesember = fun puzzle ->
-        let instructions = puzzle |> parseInstruction
+        let result=
+            numbersOnly 
+            |> Array.toList
+            |> List.map (fun elt -> elt |> int)
+        result
+
+    let moveCrate = fun (stacks: char list list) f t -> 
+        [
+        for i = 0 to stacks.Length-1 do
+            if i = t then 
+                let elt = stacks.[f].Head
+                elt::stacks.[t]
+            elif i = f then stacks.[f].Tail
+            else stacks.[i] 
+        ]
+
+    let updateStack = fun  (state: char list list) (instr : int list) ->
+            let fromStack= instr.[0]-1
+            let toStack= instr.[1]-1
+            moveCrate state fromStack toStack
+
+    let operateCrane= fun (instructions: int list list) (stacks: char list list) ->
+        printf "Starting with stack %A\n" stacks
+
+        let allInst = 
+            instructions 
+//            |> List.take 2
+            |> List.collect (fun instr ->
+//                printf "Moving %i items from %i to %i \n" instr.[0] instr.[1] instr.[2] |> ignore
+                [for _ = 1 to instr[0] do [instr.[1]; instr.[2]]]
+                )
+        allInst
+        |> List.fold updateStack stacks
+        
+    let femtedesember = fun (puzzle: string list) ->
+        let instructions = 
+            puzzle 
+            |> List.map (fun inst -> 
+                parseInstruction inst
+                )
         let stack = 
             parseStack initialStackInput
-            |>
+            |> (operateCrane instructions)
+
+        printf "End stack %A\n" stack
+        stack 
+        |> List.map (fun s -> s.Head) 
+        |> List.toArray |> (fun s -> new System.String(s))
 
     [<EntryPoint>]
     let main argv = 
@@ -270,10 +304,12 @@ module Hoved =
         // printf "4.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
 
         let puzzle= File.ReadAllLines(@"dec5.txt") |> List.ofSeq
-        printf "5.desember 1 section overlap %i\n" (femtedesember puzzle)
+        printf "5.desember 1 section crane operations\n"
+        let s= (femtedesember puzzle)
+        printf "End result %s\n" s
         //printf "5.desember 2 section overlap %i\n" (fjerdedesember puzzle isOverlap)
 
-        
+                
 
         Console.Read() |> ignore
         0 // return an integer exit code
