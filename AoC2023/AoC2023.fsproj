@@ -10,6 +10,13 @@
     <Compile Include="Luke/2.fs" />
     <Compile Include="Luke/3.fs" />
     <Compile Include="Luke/4.fs" />
+    <Compile Include="Luke/5.fs" />
+    <Compile Include="Luke/6.fs" />
+    <Compile Include="Luke/7.fs" />
+    <Compile Include="Luke/8.fs" />
+    <Compile Include="Luke/9.fs" />
+    <Compile Include="Luke/10.fs" />
+    <Compile Include="Luke/11.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
