@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "vUsc4pQvpfo04Un4UpIn1I8Fdvl9MJRsTx10UBZ+079VHxhYR907dDqzYPHgKhj3xXVWuyeg9juEojfdLU+gNw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\arne.hatlen\\Documents\\Repositories\\Julekalender\\AoC2023\\Luke\\Luke.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\arne.hatlen\\.nuget\\packages\\fsharp.core\\8.0.100\\fsharp.core.8.0.100.nupkg.sha512"
+  ],
+  "logs": []
+}

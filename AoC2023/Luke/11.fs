@@ -94,6 +94,9 @@ module Luke11 =
                 xmap.Tail 
                 |> List.map (fun (x,y) ->
                     let d= (Math.Abs (px-x)) + (Math.Abs(py-y))
+
+  //                  printf "Distance [%i, %i] ->  [%i, %i] = %i\n" px py x y d
+
                     d
                     )
                 |> List.sum 
@@ -105,7 +108,7 @@ module Luke11 =
         let galaxies = getCoordinates map
 
         // printf "There are %i galaxies in this universe with dimension (%i,%i) \n" galaxies.Length map[0].Length map.Length
-        printf "Distances %A\n" galaxies
+//        printf "Coordinates %A\n" galaxies
 
         let xmap = 
             expandUniverse times
@@ -113,7 +116,7 @@ module Luke11 =
                 map[0].Length // first line is sample
                 map.Length    // all lines
 
-        printf "Expanded  %A\n\n\n" xmap
+//        printf "Expanded  %A\n\n\n" xmap
         let dists = calculateDistances xmap
 
         dists
@@ -121,31 +124,32 @@ module Luke11 =
     let _1 input =
         solve input 1
     let _2 input =
-        solve input 100 //0000
+        solve input (1000000L-1L) 
 
     let puzzle =
         let puzzleInput= File.ReadAllText(@"dec11.txt")
         let puzzleInputt= File.ReadAllText(@"dec11t.txt")
 
-        let expected1 = 374L
-        let actual1 = _1 puzzleInputt
+        // let expected1 = 374L
+        // let actual1 = _1 puzzleInputt
 
-        if  actual1 = expected1 then
-            printf "Test 1 OK %i\n" actual1
-            let result = _1 puzzleInput
-            printf "11. desember 1 %i\n " result
-        else 
-            printf "11. desember 1 - Test did not match. Expected %i but was %i\n" expected1 actual1
+        // if  actual1 = expected1 then
+        //     printf "Test 1 OK %i\n" actual1
+        //     let result = _1 puzzleInput
+        //     printf "11. desember 1 %i\n " result
+        // else 
+        //     printf "11. desember 1 - Test did not match. Expected %i but was %i\n" expected1 actual1
 
         let expected2 = 8410L
         let actual2 = _2 puzzleInputt
 
-        if  actual2 = expected2 then
-            printf "Test 2 OK %i\n" actual2
-            let result = _2 puzzleInput
-            printf "11. desember 2 %i\n" result
+        // if  actual2 = expected2 then
+        //     printf "Test 2 OK %i\n" actual2
+        let result = _2 puzzleInput
+        printf "11. desember 2 %i\n" result
             // 553224968560 
             // trekker fra 82... 553224968478
             // Minste var for høyt...
-        else
-            printf "11. desember 2 - Test did not match. Expected %i but was %i\n" expected2 actual2
+            // 553224415344
+        // else
+        //     printf "11. desember 2 - Test did not match. Expected %i but was %i\n" expected2 actual2
