@@ -1,9 +1,0 @@
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\TerminalTest.exe.config
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\TerminalTest.XML
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\TerminalTest.exe
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\TerminalTest.pdb
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\FSharp.Core.dll
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\FSharp.Core.xml
-c:\Projects\TerminalTest\TerminalTest\obj\Debug\TerminalTest.exe
-c:\Projects\TerminalTest\TerminalTest\obj\Debug\TerminalTest.pdb
-c:\Projects\TerminalTest\TerminalTest\bin\Debug\FriendsHates.txt
