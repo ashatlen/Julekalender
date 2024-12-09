@@ -610,7 +610,6 @@ module Program =
 
     let solution_6_2 curr guard (radar : char list list) = 
         let (x,y) = curr
-        printfn "Guard postion %i,%i, radar map size (%i, %i)" x y radar.Head.Length radar.Length
         let loopPoints= findLoopPoints curr guard radar [(x,y,guard)] []
         printfn "Loop points %A" loopPoints
         loopPoints
@@ -656,6 +655,8 @@ module Program =
         |> (fun loops -> loops.Length)
 
         |> printfn "Solution 6 2 : %i\n"
+        printfn "Guard postion %i,%i, radar map size (%i, %i)" x y radar.Head.Length radar.Length
+        // Gets 882, too low...
 
     let rec calculateOps testval (result :int64) op (vals :int64 list) =
         
@@ -886,6 +887,49 @@ module Program =
         solution_8_2 (dimx, dimy) map
         |> printfn "Solution 8 2 : %i\n"
 
+
+    let rec parseFilestring isFile fileId (diskformat : char seq) = 
+        if (Seq.isEmpty diskformat) then
+            Seq.empty
+        else
+            let size = 
+                (Seq.head diskformat)
+                |> (fun s -> int(s)) 
+
+            let segment =
+                seq {
+                    for i in 1..size -> 
+                        if isFile then 
+                            fileId
+                        else 
+                            -1
+                        }
+
+            let result = 
+                Seq.append 
+                    segment 
+                    (parseFilestring (not isFile) (if isFile then (fileId + 1 ) else fileId) (Seq.tail diskformat))
+
+            result
+
+    let solution_9_1 filemap = 
+        1
+
+    let solutions_9 filename =
+
+        let diskmap =
+            filename
+            |> System.IO.File.ReadAllLines
+            |> List.ofArray
+            |> List.head
+
+        let filemap = 
+            parseFilestring true 0 diskmap
+
+        solution_9_1 filemap
+        |> printfn "Solution 8 1 : %i\n"
+        
+
     let puzzle n =
         match n with
         | 1 -> solutions_1 "inputs/1.txt"
@@ -896,9 +940,10 @@ module Program =
         | 6 -> solutions_6 "inputs/6.txt"
         | 7 -> solutions_7 "inputs/7.txt"
         | 8 -> solutions_8 "inputs/8.txt"
+        | 9 -> solutions_9 "inputs/9_test.txt"
         | _ -> printf "Ingen luke er valgt."
 
     [<EntryPoint>]
     let main _ =
-        puzzle 8
+        puzzle 6
         0

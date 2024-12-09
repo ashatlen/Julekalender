@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "NEBW4mczcJs=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\arne.hatlen\\Documents\\Repositories\\Julekalender\\AoC2024\\AoC2024.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\arne.hatlen\\.nuget\\packages\\fsharp.core\\8.0.400\\fsharp.core.8.0.400.nupkg.sha512"
+  ],
+  "logs": []
+}
