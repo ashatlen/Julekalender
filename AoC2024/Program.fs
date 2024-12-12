@@ -888,13 +888,15 @@ module Program =
         |> printfn "Solution 8 2 : %i\n"
 
 
-    let rec parseFilestring isFile fileId (diskformat : char seq) = 
+    let rec parseFilestring isFile fileId (diskformat : string) = 
         if (Seq.isEmpty diskformat) then
-            Seq.empty
+            ""
         else
             let size = 
                 (Seq.head diskformat)
-                |> (fun s -> int(s)) 
+                |> (fun s -> int(s) - (int('0'))) 
+
+            //printfn "size: %i" size
 
             let segment =
                 seq {
@@ -904,15 +906,139 @@ module Program =
                         else 
                             -1
                         }
+                |> Seq.fold 
+                    (fun str itm -> sprintf "%s%s" str (if isFile then (sprintf "%i" fileId) else ".")) 
+                    ""
 
             let result = 
-                Seq.append 
+                sprintf "%s%s"
                     segment 
-                    (parseFilestring (not isFile) (if isFile then (fileId + 1 ) else fileId) (Seq.tail diskformat))
+                    
+                        (
+                        parseFilestring 
+                            (not isFile) 
+                            (if isFile then (fileId + 1 ) else fileId) 
+                            (diskformat[1..])
+                        )
 
             result
 
+    let rec parseFilestring2 isFile fileId (diskformat :  char seq) = 
+        if Seq.isEmpty diskformat then
+            []
+        else
+            let c = Seq.head diskformat
+            let size = int(c) - (int('0'))
+
+            let elt = 
+                (if isFile then 
+                    [(fileId,size)]
+                 else 
+                    [(-1,size)])
+            let rest =
+                parseFilestring2
+                    (not isFile) 
+                    (if isFile then (fileId + 1 ) else fileId) 
+                    (Seq.tail diskformat)
+
+
+            List.append elt rest
+
+    // let setCharacter toPos (element:char)  (filemap:string) =
+    //     filemap[0..toPos-1] + (sprintf "%c" element) + filemap[toPos+1..]
+
+    // let rec compactDiskFiles curr fetch (filemap : string) =
+    //     if curr >= fetch then 
+    //         filemap[..curr] 
+    //     elif filemap[curr] = '.' then
+    //         let toInsert = filemap[fetch]
+    //         if toInsert <> '.' then
+    //             let f = setCharacter curr toInsert filemap
+    //             compactDiskFiles (curr+1) (fetch-1) f[..fetch]
+    //         else
+    //             compactDiskFiles curr (fetch-1) filemap
+    //     else
+    //         compactDiskFiles (curr+1) fetch filemap
+
+    let rec compactDiskFiles (currSeg : (int*int) list) (currSpace :int) fromElt (filemap : (int*int) list) (empties : int list) =       
+        let (fromFileId,fromSize) = fromElt
+
+        // Fylt et segment, hent neste tomme
+        // if currSpace = 0 then
+        //     let resultSeg = currSeg |> List.rev   // segmentene fylles på først
+        //     let newSpace = List.head empties
+            
+        //     printfn "%A" resultSeg
+
+        //     resultSeg :: compactDiskFiles [] newSpace fromElt filemap (List.tail empties)
+
+        // Fila er flyttet, til neste:
+        if fromSize = 0 then 
+            if List.isEmpty filemap then 
+                [currSeg]
+            else
+                let fromElt' = List.head filemap 
+                compactDiskFiles currSeg currSpace fromElt' (List.tail filemap) empties
+
+        // Skal flytte hele (resten av) filen
+        elif (currSpace > fromSize) then 
+            let newSpace = currSpace - fromSize
+
+            let currSeg' = (fromElt :: currSeg)
+            let fromElt' = List.head filemap 
+            compactDiskFiles currSeg' newSpace fromElt' (List.tail filemap) empties
+
+        else    // fyller plassen og må kanskje dele fila
+            let fileSeg =
+                if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
+                    fromElt
+                else
+                    (fromFileId, currSpace)
+            
+            let currSeg' = fileSeg :: currSeg |> List.rev   // segmentene fylles på og returneres
+          
+            currSeg' ::
+                if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
+                    []
+                else
+                    let restFile= (fromFileId, fromSize-currSpace) // Kan være 0
+                    let newSpace = List.head empties
+                    printfn "segment: %A" currSeg'
+
+                    compactDiskFiles [] newSpace restFile filemap (List.tail empties)
+            
+        // if free, fill it with the last file.
+        // If still space, fill with the rest else move to the next elt.
+
     let solution_9_1 filemap = 
+        let files = List.filter (fun f -> (fst f) <> -1) filemap
+
+        let empties = 
+            filemap 
+            |> List.filter (fun f -> (fst f) = -1 && (snd f) > 0) 
+            |> List.map (fun (_,size) -> size)
+
+        let revFiles = List.rev files
+
+        printfn "filemap: %A" filemap
+        printfn "files: %A" files
+        printfn "empties: %A" empties
+
+        let result = compactDiskFiles [] (List.head empties) revFiles.Head revFiles.Tail empties.Tail 
+        // Jeg har nå en liste av fylte tomrom. Problemet er at jeg ikke har oversikt over
+        // hvilke tomrom jeg har fylt, og hvilke filer som ikke er flyttet...
+        // Returnere resten av filemap og så "zippe" ? Må i så fall gjøre restein om til list list, 
+        // slik de flyttede filene er...
+        printfn "Filemap: %A" result
+
+
+        // seq {for i in 0..(Seq.length result)-1 -> i}
+        // |> Seq.fold (fun s i -> 
+        //     let v= int(result[i])-int('0')
+        //     s + v * i
+        //     )
+        //     0
+        
         1
 
     let solutions_9 filename =
@@ -921,12 +1047,15 @@ module Program =
             filename
             |> System.IO.File.ReadAllLines
             |> List.ofArray
-            |> List.head
+            |> List.head            
 
         let filemap = 
             parseFilestring true 0 diskmap
 
-        solution_9_1 filemap
+        let filemap2 = 
+            parseFilestring2 true 0 diskmap
+        solution_9_1 filemap2
+
         |> printfn "Solution 8 1 : %i\n"
         
 
@@ -945,5 +1074,5 @@ module Program =
 
     [<EntryPoint>]
     let main _ =
-        puzzle 6
+        puzzle 9
         0
