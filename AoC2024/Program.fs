@@ -923,26 +923,23 @@ module Program =
 
             result
 
-    let rec parseFilestring2 isFile fileId (diskformat :  char seq) = 
+    let rec parseFilestring2a isFile fileId (diskformat :  char seq) = 
         if Seq.isEmpty diskformat then
             []
         else
+            if (isFile && fileId % 100 = 0 ) then
+                printfn "Parsed %i files" fileId
             let c = Seq.head diskformat
-            let size = int(c) - (int('0'))
-
             let elt = 
                 (if isFile then 
-                    [(fileId,size)]
+                    (fileId,c)
                  else 
-                    [(-1,size)])
-            let rest =
-                parseFilestring2
+                    (-1,c))
+            elt ::
+                parseFilestring2a
                     (not isFile) 
                     (if isFile then (fileId + 1 ) else fileId) 
                     (Seq.tail diskformat)
-
-
-            List.append elt rest
 
     // let setCharacter toPos (element:char)  (filemap:string) =
     //     filemap[0..toPos-1] + (sprintf "%c" element) + filemap[toPos+1..]
@@ -960,86 +957,199 @@ module Program =
     //     else
     //         compactDiskFiles (curr+1) fetch filemap
 
-    let rec compactDiskFiles (currSeg : (int*int) list) (currSpace :int) fromElt (filemap : (int*int) list) (empties : int list) =       
-        let (fromFileId,fromSize) = fromElt
+    // let rec compactDiskFiles (currSeg : (int*int) list) (currSpace :int) fromElt (filemap : (int*int) list) (empties : int list) =       
+    //     let (fromFileId,fromSize) = fromElt
 
-        // Fylt et segment, hent neste tomme
-        // if currSpace = 0 then
-        //     let resultSeg = currSeg |> List.rev   // segmentene fylles på først
-        //     let newSpace = List.head empties
+    //     // Fylt et segment, hent neste tomme
+    //     // if currSpace = 0 then
+    //     //     let resultSeg = currSeg |> List.rev   // segmentene fylles på først
+    //     //     let newSpace = List.head empties
             
-        //     printfn "%A" resultSeg
+    //     //     printfn "%A" resultSeg
 
-        //     resultSeg :: compactDiskFiles [] newSpace fromElt filemap (List.tail empties)
+    //     //     resultSeg :: compactDiskFiles [] newSpace fromElt filemap (List.tail empties)
 
-        // Fila er flyttet, til neste:
-        if fromSize = 0 then 
-            if List.isEmpty filemap then 
-                [currSeg]
-            else
-                let fromElt' = List.head filemap 
-                compactDiskFiles currSeg currSpace fromElt' (List.tail filemap) empties
+    //     // Fila er flyttet, til neste:
+    //     if fromSize = 0 then 
+    //         if List.isEmpty filemap then 
+    //             [currSeg]
+    //         else
+    //             let fromElt' = List.head filemap 
+    //             compactDiskFiles currSeg currSpace fromElt' (List.tail filemap) empties
 
-        // Skal flytte hele (resten av) filen
-        elif (currSpace > fromSize) then 
-            let newSpace = currSpace - fromSize
+    //     // Skal flytte hele (resten av) filen
+    //     elif (currSpace > fromSize) then 
+    //         let newSpace = currSpace - fromSize
 
-            let currSeg' = (fromElt :: currSeg)
-            let fromElt' = List.head filemap 
-            compactDiskFiles currSeg' newSpace fromElt' (List.tail filemap) empties
+    //         let currSeg' = (fromElt :: currSeg)
+    //         let fromElt' = List.head filemap 
+    //         compactDiskFiles currSeg' newSpace fromElt' (List.tail filemap) empties
 
-        else    // fyller plassen og må kanskje dele fila
-            let fileSeg =
-                if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
-                    fromElt
-                else
-                    (fromFileId, currSpace)
+    //     else    // fyller plassen og må kanskje dele fila
+    //         let fileSeg =
+    //             if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
+    //                 fromElt
+    //             else
+    //                 (fromFileId, currSpace)
             
-            let currSeg' = fileSeg :: currSeg |> List.rev   // segmentene fylles på og returneres
+    //         let currSeg' = fileSeg :: currSeg |> List.rev   // segmentene fylles på og returneres
           
-            currSeg' ::
-                if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
-                    []
-                else
-                    let restFile= (fromFileId, fromSize-currSpace) // Kan være 0
-                    let newSpace = List.head empties
-                    printfn "segment: %A" currSeg'
+    //         currSeg' ::
+    //             if List.isEmpty empties then // siste tomplass, resten skal ikke flyttes, fordi det er plass
+    //                 []
+    //             else
+    //                 let restFile= (fromFileId, fromSize-currSpace) // Kan være 0
+    //                 let newSpace = List.head empties
+    //                 printfn "segment: %A" currSeg'
 
-                    compactDiskFiles [] newSpace restFile filemap (List.tail empties)
+    //                 compactDiskFiles [] newSpace restFile filemap (List.tail empties)
             
-        // if free, fill it with the last file.
-        // If still space, fill with the rest else move to the next elt.
+    //     // if free, fill it with the last file.
+    //     // If still space, fill with the rest else move to the next elt.
+
+
+    // mottar en strøm av segmenter
+    // dersom fil, summer.
+    // dersom åpent, ta segment fra fil og summer
+    //  - hvis overflow, må bære den samme fila til neste, ellers head.
+    // - hvordan stoppe? Når fila som skal flyttes er den samme som blir flyttet.
+    //   - må fullføre siste fil, antar at resten er ledig.
+
+    let calculateChecksum  locFrom locTo fileId =
+//        printfn "calculate from loc %i to loc %i for file %i" locFrom (locTo-1) fileId
+        seq { for l in locFrom..(locTo-1) -> l * fileId }
+        |> Seq.sum  // file loc * fileId 
+
+//     let rec compactDiskFiles (location :int) lastKeptFile  destination source (filemap : (int*int) seq) (filesToMove : (int*int) seq) =
+//         // printfn "source: %A" source
+//         // printfn "destination %A" destination
+
+//         if lastKeptFile % 50 = 0 then
+//             printfn "Last kept file %i" lastKeptFile
+
+//         if  (fst destination) >= 0 then // The location is used, keep the destination file
+//             let fileId = fst destination
+//             let newLocation =location + (snd destination)
+//             let sum = calculateChecksum location newLocation fileId
+//             let lastKeptFile = fileId
+// //            printfn "sum %i - use destination %A " sum destination
+//             sum + compactDiskFiles newLocation lastKeptFile (Seq.head filemap) source (Seq.tail filemap) filesToMove
+
+//         elif (snd destination) = 0  then // The empty space is used up, need to find a new
+//             // printfn "%A is empty, get new destination " destination
+//             compactDiskFiles location lastKeptFile (Seq.head filemap) source (Seq.tail filemap) filesToMove
+
+//         // Fill file segments from source
+//         else
+//             let fileId = fst source
+//             if (lastKeptFile + 1 = fileId) then
+//                 let newLocation = location + (snd source)
+//                 let sum = calculateChecksum location newLocation fileId
+// //                printfn "sum %i - fill the last file segment %A" sum source
+//                 sum
+//             else
+//                 let segment = 
+//                     // we are starting to move the last file
+//                     if (fst source) = lastKeptFile then 
+//                         (snd source)
+//                     else
+//                         min (snd source) (snd destination) // how much can we move? free space / file size
+//                 let newLocation = location + segment 
+//                 let sum = calculateChecksum location newLocation fileId
+
+//                 if segment = (snd source) then // source is completely moved, can still be space left in dest
+// //                    printfn "sum %i - complete source, filled %i : %A" sum segment source
+//                     let (newDest, newFilemap) =
+//                         if segment = (snd destination) then // dest is also filled
+//                             (Seq.head filemap, Seq.tail filemap)
+//                         else
+//                             ((-1, (snd destination) - segment), filemap)
+//                     let newSource = (Seq.head  filesToMove)                    
+
+//                     sum + compactDiskFiles newLocation lastKeptFile newDest newSource newFilemap (Seq.tail filesToMove)
+
+//                 else // dest is full, need to move to the next dest to put the rest of the source
+// //                    printfn "sum %i - partial source, filled %i: %A" sum segment source
+//                     let newSource = ((fst source), (snd source) - segment)
+//                     let newDest = (Seq.head filemap)
+//                     if (snd newDest) = 0 then
+//                         printfn "Dette var rart? Tomt gap? %A for å legge resten av fila %A (før var den %A)" newDest newSource source                   
+//                     sum + compactDiskFiles newLocation lastKeptFile newDest newSource (Seq.tail filemap) filesToMove
+
+    let rec compactDiskFiles (location :int) lastKeptFile  destination source (filemap : (int*int) seq) (filesToMove : (int*int) seq) =
+        // printfn "source: %A" source
+        // printfn "destination %A" destination
+        if lastKeptFile % 50 = 0 then
+            printfn "Last kept file %i" lastKeptFile
+
+        if  (fst destination) >= 0 then // The location is used, keep the destination file
+            let fileId = fst destination
+            let newLocation =location + (snd destination)
+            let sum = calculateChecksum location newLocation fileId
+
+            let lastKeptFile = fileId
+//            printfn "sum %i - use destination %A " sum destination
+            sum + compactDiskFiles newLocation lastKeptFile (Seq.head filemap) source (Seq.tail filemap) filesToMove
+
+        elif (snd destination) = 0  then // The empty space is used up, need to find a new
+            // printfn "%A is empty, get new destination " destination
+            compactDiskFiles location lastKeptFile (Seq.head filemap) source (Seq.tail filemap) filesToMove
+
+        // Fill file segments from source
+        else
+            let fileId = fst source
+            if (lastKeptFile + 1 = fileId) then
+                let newLocation = location + (snd source)
+                let sum = calculateChecksum location newLocation fileId
+//                printfn "sum %i - fill the last file segment %A" sum source
+                sum
+            else
+                let segment = 
+                    // we are starting to move the last file
+                    if (fst source) = lastKeptFile then 
+                        (snd source)
+                    else
+                        min (snd source) (snd destination) // how much can we move? free space / file size
+                let newLocation = location + segment 
+                let sum = calculateChecksum location newLocation fileId
+
+                if segment = (snd source) then // source is completely moved, can still be space left in dest
+//                    printfn "sum %i - complete source, filled %i : %A" sum segment source
+                    let (newDest, newFilemap) =
+                        if segment = (snd destination) then // dest is also filled
+                            (Seq.head filemap, Seq.tail filemap)
+                        else
+                            ((-1, (snd destination) - segment), filemap)
+                    let newSource = (Seq.head  filesToMove)                    
+
+                    sum + compactDiskFiles newLocation lastKeptFile newDest newSource newFilemap (Seq.tail filesToMove)
+
+                else // dest is full, need to move to the next dest to put the rest of the source
+//                    printfn "sum %i - partial source, filled %i: %A" sum segment source
+                    let newSource = ((fst source), (snd source) - segment)
+                    let newDest = (Seq.head filemap)
+                    if (snd newDest) = 0 then
+                        printfn "Dette var rart? Tomt gap? %A for å legge resten av fila %A (før var den %A)" newDest newSource source                   
+                    sum + compactDiskFiles newLocation lastKeptFile newDest newSource (Seq.tail filemap) filesToMove
 
     let solution_9_1 filemap = 
-        let files = List.filter (fun f -> (fst f) <> -1) filemap
+        //let files = List.filter (fun f -> (fst f) <> -1) filemap
 
-        let empties = 
+        let moveSuspects = 
             filemap 
-            |> List.filter (fun f -> (fst f) = -1 && (snd f) > 0) 
-            |> List.map (fun (_,size) -> size)
+            |> List.filter (fun f -> (fst f) >= 0) 
+            |> List.rev
 
-        let revFiles = List.rev files
+        // printfn "filemap: %A" filemap
+        // printfn "files: %A" moveSuspects
 
-        printfn "filemap: %A" filemap
-        printfn "files: %A" files
-        printfn "empties: %A" empties
+        let destination = (Seq.head filemap)
+        let lastKeptFile = (fst destination) // assuming that the first is a file.
 
-        let result = compactDiskFiles [] (List.head empties) revFiles.Head revFiles.Tail empties.Tail 
-        // Jeg har nå en liste av fylte tomrom. Problemet er at jeg ikke har oversikt over
-        // hvilke tomrom jeg har fylt, og hvilke filer som ikke er flyttet...
-        // Returnere resten av filemap og så "zippe" ? Må i så fall gjøre restein om til list list, 
-        // slik de flyttede filene er...
-        printfn "Filemap: %A" result
+        let result = compactDiskFiles 0 lastKeptFile destination (Seq.head moveSuspects) (Seq.tail filemap) (Seq.tail moveSuspects) 
+//        printfn "Filemap: %A" result
 
-
-        // seq {for i in 0..(Seq.length result)-1 -> i}
-        // |> Seq.fold (fun s i -> 
-        //     let v= int(result[i])-int('0')
-        //     s + v * i
-        //     )
-        //     0
-        
-        1
+        result
 
     let solutions_9 filename =
 
@@ -1050,14 +1160,172 @@ module Program =
             |> List.head            
 
         let filemap = 
-            parseFilestring true 0 diskmap
-
-        let filemap2 = 
-            parseFilestring2 true 0 diskmap
-        solution_9_1 filemap2
-
-        |> printfn "Solution 8 1 : %i\n"
+            diskmap 
+            |> Seq.map (fun c ->
+                int(c) - int('0')
+            )
+            |> Seq.fold (fun (segments ,isFile, fileId) elt ->
+                if isFile then 
+                    ((Seq.append [(fileId, elt)] segments), false, (fileId + 1))
+                else
+                    ((Seq.append [(-1, elt)] segments), true, fileId)
+                )
+                (Seq.empty, true, 0)
+            |> (fun (segments,_,_) -> segments)  
+            |> List.ofSeq
+            |> List.rev
+        // let filemap2 = 
+        //     parseFilestring2a true 0 diskmap
+        //     |> List.map (
+        //         fun (fId, cSize) -> 
+        //             let size = int(cSize) - (int('0'))
+        //             (fId, size)
+        //             ) 
         
+        printfn "Parsed %i segments %A" (List.length filemap) filemap
+
+        solution_9_1 filemap
+        |> printfn "Solution 9 1 : %i\n"
+
+    let rec findTopoTrails currHeight pos (topomap : (int) list list) =
+        if currHeight = 9 then
+//            printfn "Found solution!"
+            [Some pos]
+        else
+            let (x,y) = pos
+            let maxx = (List.head topomap).Length-1
+            let maxy = topomap.Length-1
+            let currHeight' = currHeight + 1
+
+            // check up/down/left/right
+            let subscores = 
+                seq [(0,-1);(0,1);(-1,0);(1,0)]
+                |> Seq.map( fun (dx, dy) ->
+                    let (nx,ny)= (x+dx,y+dy)                    
+                    if     ny >= 0 && ny <= maxy 
+                        && nx >= 0 && nx <= maxx 
+                        && topomap[ny][nx] = currHeight' then
+                            // printfn "%A %i" (nx,ny) (currHeight')
+                            findTopoTrails currHeight' (nx, ny) topomap
+                        else
+                            [None]
+                    )
+                |> List.ofSeq 
+                |> List.concat
+            let result = 
+                 subscores 
+                |> List.filter (fun i -> Option.isSome i)
+//            printfn "Scores from this branch: %i" result
+            result
+
+    let findTrailheads (topomap : int list list) =
+        let maxy = topomap.Length-1
+ 
+        seq {for i in 0..maxy -> i}
+        |> Seq.map (fun y -> 
+            let topoline= topomap[y] 
+            let maxx = topoline.Length-1
+            seq {for i in 0..maxx -> i}
+            |> Seq.map (fun x -> 
+                if topoline[x] = 0 then
+                    Some (x,y)
+                else
+                    None
+                )
+            |> Seq.filter (fun i -> Option.isSome i)
+            |> Seq.map (fun e -> e.Value)
+            )
+        |> Seq.concat
+
+    let solution_10_1 (topomap : int list list) =
+        let maxy = topomap.Length-1
+ 
+        let trailheads = findTrailheads topomap
+
+        let scores =
+            trailheads
+            |> List.ofSeq 
+            |> List.map (fun s ->
+                // printfn "from %A" (s)
+                let result= findTopoTrails 0 s topomap
+                // printfn "Scores: %A %i" result (List.length result)
+                result
+                |> List.distinct  
+                |> List.length
+                )
+
+        scores |> Seq.sum 
+
+    let solution_10_2 (topomap : int list list) =
+        let  trailheads = findTrailheads topomap
+        let scores =
+            trailheads
+            |> List.ofSeq 
+            |> List.map (fun s ->
+                // printfn "from %A" (s)
+                let result= findTopoTrails 0 s topomap
+                // printfn "Scores: %A %i" result (List.length result)
+                result
+                |> List.length
+                )
+
+        scores |> Seq.sum 
+
+    let solutions_10 filename =
+        let topomap =
+            filename
+            |> System.IO.File.ReadAllLines
+            |> Array.map (fun line ->
+                line 
+                |> Seq.map (fun c -> int(c) - int('0'))  
+                |> Seq.toList
+                )
+            |> List.ofArray
+
+        solution_10_1 topomap
+        |> printfn "Solution 10 1 : %i\n"
+
+        solution_10_2 topomap
+        |> printfn "Solution 10 2 : %i\n"
+
+    let mutateTomb tombString =
+        match tombString with
+        | "0" -> ["1"]
+        | x when (x.Length % 2) = 0 -> 
+            let half = (x.Length / 2)
+            [ x[0..(half-1)];x[half..]] 
+            |> List.map (fun numStr -> sprintf "%i" (Int64.Parse(numStr)))
+        | x -> [sprintf "%i" (Int64.Parse(x) * 2024L)]
+
+    let rec mutateTombs gen tombString =
+        let mTomb = mutateTomb tombString
+        if gen = 0 then 
+            mTomb |> List.length
+        else
+            // finn antall tombs per tomb. verdiene er ikke viktig, trenger bare antall
+            mTomb |> List.map (mutateTombs (gen-1)) |> List.sum
+
+    let solution_11_1 gens input = 
+        let tombsResult =
+            input 
+            |> List.map (fun (tomb) ->
+                mutateTombs gens tomb
+                )
+            |> List.sum
+                //printfn "%A" tombs'
+        tombsResult
+
+    let solutions_11 (source: string) =
+
+        let input = 
+            source.Split " "
+            |> Array.toList
+
+        solution_11_1 24 input
+        |> printfn "Solution 11 1 : %i\n"
+
+        solution_11_1 74 input
+        |> printfn "Solution 11 2 : %i\n"
 
     let puzzle n =
         match n with
@@ -1069,10 +1337,12 @@ module Program =
         | 6 -> solutions_6 "inputs/6.txt"
         | 7 -> solutions_7 "inputs/7.txt"
         | 8 -> solutions_8 "inputs/8.txt"
-        | 9 -> solutions_9 "inputs/9_test.txt"
+        | 9 -> solutions_9 "inputs/9.txt"
+        | 10 -> solutions_10 "inputs/10.txt"
+        | 11 -> solutions_11  "28591 78 0 3159881 4254 524155 598 1"// "125 17"
         | _ -> printf "Ingen luke er valgt."
 
     [<EntryPoint>]
     let main _ =
-        puzzle 9
+        puzzle 11
         0
